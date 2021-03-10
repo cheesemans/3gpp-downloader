@@ -11,32 +11,44 @@ def build_specification_link():
     download_link = select_version(specification_version_table)
     print(download_link)
 
-def select_version(specification_table):
-    table_array = specification_table.to_numpy()
-    option_iterator = 0
-    print('%-5s' % "Nr", '%-15s' % "Version", '%s' % "Release date")
-    for row in table_array:
-        option_iterator += 1
-        print('%-5s' % (str(option_iterator) + ":"), '%-15s' % row[1], '%s' % row [2])
-    choice = int(input("Choose a version to download (from 1 - %i): " % option_iterator))
-    return table_array[choice - 1][0]
 
 def get_specification_archive_url():
-    #spec = input("Specification number: ")
-    spec = "38.413"
-    series = spec.partition(".")[0]
-    return "https://www.3gpp.org/ftp/Specs/archive/" + series + "_series/" + spec
+    #spec = input('Specification number: ')
+    spec = '38.413'
+    series = spec.partition('.')[0]
+    return f'https://www.3gpp.org/ftp/Specs/archive/{series}_series/{spec}'
+
 
 def get_specification_versions(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'lxml')
     tables = soup.find_all('table')
     if len(tables) > 1:
-        print("Make script handle pages with multiple tables")
+        print('Make script handle pages with multiple tables')
     else:
         return parse_html_table(tables[0])
 
+
+def select_version(specification_table):
+    table_array = specification_table.to_numpy()
+    option_iterator = 0
+    print('%-5s' % 'Nr', '%-15s' % 'Version', '%s' % 'Release date')
+    for row in table_array:
+        print('%-5s' % (str(option_iterator) + ':'), '%-15s' % row[1], '%s' % row [2])
+        option_iterator += 1
+    choice = int(input('Choose a version to download (from 1 - %i): ' % option_iterator))
+    return table_array[choice][0]
+
+
 def parse_html_table(html_table):
+    n_columns, n_rows = get_nr_rows_cols(html_table)
+
+    parsed_table = extract_table_data(html_table, n_columns, n_rows)
+
+    return parsed_table
+
+
+def get_nr_rows_cols(html_table):
     n_columns = 0
     n_rows = 0
 
@@ -51,7 +63,11 @@ def parse_html_table(html_table):
                 # Set the number of columns for the table
                 n_columns = len(td_tags)
 
-    parsed_table = pd.DataFrame(columns = range(0, n_columns), index = range(0, n_rows))
+    return {n_columns, n_rows}
+
+
+def extract_table_data(html_table, n_columns, n_rows):
+    table = pd.DataFrame(columns = range(0, n_columns), index = range(0, n_rows))
 
     row_marker = 0
     for row in html_table.find_all('tr'):
@@ -61,18 +77,19 @@ def parse_html_table(html_table):
             column_text = []
 
             if column.a != None:
-                parsed_table.iat[row_marker, column_marker - 1]  = column.a['href']
+                table.iat[row_marker, column_marker - 1]  = column.a['href']
 
             column_text = column.get_text()
-            parsed_table.iat[row_marker, column_marker] = column_text.strip().strip('.zip')
+            table.iat[row_marker, column_marker] = column_text.strip().strip('.zip')
             column_marker += 1
         if len(columns) > 0:
             row_marker += 1
 
-    return parsed_table
+    return table
+
 
 def main():
     download_link = build_specification_link()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
