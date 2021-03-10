@@ -1,20 +1,20 @@
 # Python program to download 3gpp documents
 
 # Imports
-import requests
+import requests, zipfile, io
 from bs4 import BeautifulSoup
 import pandas as pd
 
 def build_specification_link():
     specification_archive_url = get_specification_archive_url()
     specification_version_table = get_specification_versions(specification_archive_url)
-    download_link = select_version(specification_version_table)
-    print(download_link)
+    url = select_version(specification_version_table)
+    download_url(url)
 
 
 def get_specification_archive_url():
-    #spec = input('Specification number: ')
-    spec = '38.413'
+    spec = input('Specification number: ')
+    # spec = '38.413'
     series = spec.partition('.')[0]
     return f'https://www.3gpp.org/ftp/Specs/archive/{series}_series/{spec}'
 
@@ -36,8 +36,9 @@ def select_version(specification_table):
     for row in table_array:
         print('%-5s' % (str(option_iterator) + ':'), '%-15s' % row[1], '%s' % row [2])
         option_iterator += 1
-    choice = int(input('Choose a version to download (from 1 - %i): ' % option_iterator))
-    return table_array[choice][0]
+    choice = int(input(f'Choose a version to download (from 0 - {option_iterator-1}): '))
+    url = table_array[choice][0]
+    return url
 
 
 def parse_html_table(html_table):
@@ -88,8 +89,16 @@ def extract_table_data(html_table, n_columns, n_rows):
     return table
 
 
+def download_url(url, save_path='downloads'):
+    r = requests.get(url, stream = True)
+    if r.ok:
+        z = zipfile.ZipFile(io.BytesIO(r.content))
+        z.extractall(save_path)
+
+
 def main():
     download_link = build_specification_link()
+
 
 if __name__ == '__main__':
     main()
