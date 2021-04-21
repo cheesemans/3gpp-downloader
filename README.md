@@ -5,7 +5,6 @@ Currently very naive and not very robust :)
 
 ## Todo
 * Validate user input:
-  * Specification number: Try and make a request based on spec url, if not successful, inform user and allow for new input
   * Version nr choice: just validate that integer is in range
 * Add option for navigating to spec. 
   * Do this by listing series, and then series number and allow user to pick from list
