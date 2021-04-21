@@ -113,6 +113,7 @@ def download_url(url, save_path='downloads'):
 
 def main():
     download_link = build_specification_link()
+    download_url(download_link)
 
 
 if __name__ == '__main__':
