@@ -2,14 +2,19 @@
 
 # Imports
 import requests, zipfile, io
-from bs4 import BeautifulSoup
 import pandas as pd
 
+from bs4 import BeautifulSoup
+from requests.exceptions import HTTPError
+
 def build_specification_link():
-    specification_archive_url = get_specification_archive_url()
-    specification_version_table = get_specification_versions(specification_archive_url)
+    specification_version_table = pd.DataFrame([])
+    print(specification_version_table.empty)
+    while specification_version_table.empty:
+        specification_archive_url = get_specification_archive_url()
+        specification_version_table = get_specification_versions(specification_archive_url)
     url = select_version(specification_version_table)
-    download_url(url)
+    return url
 
 
 def get_specification_archive_url():
@@ -20,13 +25,23 @@ def get_specification_archive_url():
 
 
 def get_specification_versions(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'lxml')
-    tables = soup.find_all('table')
-    if len(tables) > 1:
-        print('Make script handle pages with multiple tables')
+    parsed_table = pd.DataFrame([])
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+    except HTTPError as http_err:
+        print(f'HTTP error occurred: {http_err}')
+    except Exception as err:
+        print(f'Other error occurred: {err}')
     else:
-        return parse_html_table(tables[0])
+        soup = BeautifulSoup(response.text, 'lxml')
+        tables = soup.find_all('table')
+        if len(tables) > 1:
+            print('Make script handle pages with multiple tables')
+        else:
+            parsed_table = parse_html_table(tables[0])
+    finally:
+        return parsed_table
 
 
 def select_version(specification_table):
