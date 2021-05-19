@@ -9,7 +9,6 @@ from requests.exceptions import HTTPError
 
 def build_specification_link():
     specification_version_table = pd.DataFrame([])
-    print(specification_version_table.empty)
     while specification_version_table.empty:
         specification_archive_url = get_specification_archive_url()
         specification_version_table = get_specification_versions(specification_archive_url)
@@ -53,9 +52,16 @@ def select_version(specification_table):
         release_date = row[2].split(' ')[0].replace('/', '-')
         print(f"{option_iterator:<2}{spec_version:>13}{release_date:>17}")
         option_iterator += 1
-    choice = int(input(f'Choose a version to download (from 0 - {option_iterator-1}): '))
-    url = table_array[choice][0]
-    return url
+    while True:
+        try:
+            choice = int(input(f'Choose a version to download (from 0 - {option_iterator-1}): '))
+            if choice >= 0 and choice < option_iterator:
+                url = table_array[choice][0]
+                return url
+            else:
+                print("Invalid choice, pick a valid number")
+        except ValueError:
+            print("Invalid choice, pick a valid number")
 
 
 def parse_html_table(html_table):
