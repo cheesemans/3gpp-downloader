@@ -49,7 +49,9 @@ def select_version(specification_table):
     option_iterator = 0
     print('%-5s' % 'Nr', '%-15s' % 'Version', '%s' % 'Release date')
     for row in table_array:
-        print('%-5s' % (str(option_iterator) + ':'), '%-15s' % row[1], '%s' % row [2])
+        spec_version = row[1]
+        release_date = row[2].split(' ')[0].replace('/', '-')
+        print(f"{option_iterator:<2}{spec_version:>13}{release_date:>17}")
         option_iterator += 1
     choice = int(input(f'Choose a version to download (from 0 - {option_iterator-1}): '))
     url = table_array[choice][0]
