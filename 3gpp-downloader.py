@@ -56,7 +56,10 @@ def get_html_table_data(url):
 
 
 def select_url(specification_table, headers):
-    table_array = specification_table.to_numpy()
+    if pd.__version__ >= '0.24.0':
+        table_array = specification_table.to_numpy()
+    else:
+        table_array = specification_table.values()
     option_iterator = 0
     print(f"{'Nr':<6}{headers[0]:<15}{headers[1]}")
     for row in table_array:
