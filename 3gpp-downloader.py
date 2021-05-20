@@ -1,29 +1,41 @@
 # Python program to download 3gpp documents
 
 # Imports
-import requests, zipfile, io
+import requests, zipfile, io, argparse
 import pandas as pd
 
 from bs4 import BeautifulSoup
 from requests.exceptions import HTTPError
 
+# Initiate the argparser
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--spec", help="Specify 3gpp version number")
+args = parser.parse_args()
+
+
 def build_specification_link():
     specification_version_table = pd.DataFrame([])
     while specification_version_table.empty:
         specification_archive_url = get_specification_archive_url()
-        specification_version_table = get_specification_versions(specification_archive_url)
-    url = select_version(specification_version_table)
+        specification_version_table = get_html_table_data(specification_archive_url)
+    url = select_url(specification_version_table, ('Version', 'Release date'))
     return url
 
 
 def get_specification_archive_url():
-    spec = input('Specification number: ')
-    # spec = '38.413'
-    series = spec.partition('.')[0]
-    return f'https://www.3gpp.org/ftp/Specs/archive/{series}_series/{spec}'
+    if args.spec:
+        spec = args.spec
+        series = spec.partition('.')[0]
+        spec_url = f'https://www.3gpp.org/ftp/specs/archive/{series}_series/{spec}'
+    else:
+        series_table = get_html_table_data('https://www.3gpp.org/ftp/specs/archive')
+        series_url = select_url(series_table, ('Series', 'Latest Update'))
+        number_table  = get_html_table_data(series_url)
+        spec_url = select_url(number_table, ('Number', 'Latest Update'))
+    return spec_url
 
 
-def get_specification_versions(url):
+def get_html_table_data(url):
     parsed_table = pd.DataFrame([])
     try:
         response = requests.get(url)
@@ -35,7 +47,7 @@ def get_specification_versions(url):
     else:
         soup = BeautifulSoup(response.text, 'lxml')
         tables = soup.find_all('table')
-        if len(tables) > 1:
+        if len(tables) != 1:
             print('Make script handle pages with multiple tables')
         else:
             parsed_table = parse_html_table(tables[0])
@@ -43,14 +55,14 @@ def get_specification_versions(url):
         return parsed_table
 
 
-def select_version(specification_table):
+def select_url(specification_table, headers):
     table_array = specification_table.to_numpy()
     option_iterator = 0
-    print('%-5s' % 'Nr', '%-15s' % 'Version', '%s' % 'Release date')
+    print(f"{'Nr':<6}{headers[0]:<15}{headers[1]}")
     for row in table_array:
-        spec_version = row[1]
-        release_date = row[2].split(' ')[0].replace('/', '-')
-        print(f"{option_iterator:<2}{spec_version:>13}{release_date:>17}")
+        url_name = row[1]
+        timestamp = row[2].split(' ')[0].replace('/', '-')
+        print(f'{option_iterator:<6}{url_name:<15}{timestamp}')
         option_iterator += 1
     while True:
         try:
@@ -76,18 +88,15 @@ def get_nr_rows_cols(html_table):
     n_columns = 0
     n_rows = 0
 
-    # Find number of rows and columns
-    # we also find the column titles if we can
     for row in html_table.find_all('tr'):
 
         td_tags = row.find_all('td')
         if len(td_tags) > 0:
             n_rows += 1
             if n_columns == 0:
-                # Set the number of columns for the table
                 n_columns = len(td_tags)
 
-    return {n_columns, n_rows}
+    return (n_columns, n_rows)
 
 
 def extract_table_data(html_table, n_columns, n_rows):
