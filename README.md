@@ -1,8 +1,6 @@
 # 3gpp-downloader
 A downloader for 3gpp specifications (http://www.3gpp.org/specifications/specification-numbering)
 
-Currently very naive and not very robust :)
-
 ## Todo
 * Improve robustness of script as there are a couple of places where input isn't validated and
   script might crash.
