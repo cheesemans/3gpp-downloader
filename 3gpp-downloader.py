@@ -40,17 +40,17 @@ def get_html_table_data(url):
     try:
         response = requests.get(url)
         response.raise_for_status()
-    except HTTPError as http_err:
-        print(f'HTTP error occurred: {http_err}')
-    except Exception as err:
-        print(f'Other error occurred: {err}')
-    else:
+
         soup = BeautifulSoup(response.text, 'lxml')
         tables = soup.find_all('table')
         if len(tables) != 1:
             print('Make script handle pages with multiple tables')
         else:
             parsed_table = parse_html_table(tables[0])
+    except HTTPError as http_err:
+        print(f'HTTP error occurred: {http_err}')
+    except Exception as err:
+        print(f'Other error occurred: {err}')
     finally:
         return parsed_table
 
